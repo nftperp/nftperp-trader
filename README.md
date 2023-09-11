@@ -2,8 +2,7 @@
 NFTPerp trader is a pure javascript library that streamlines the process of trading on the NFTPerp Platform. The [NFTPerp Maker](https://github.com/nftperp/nftperp-maker) repo uses this script to market make on NFTPerp.
 
 ## Example
-The [NFTPerp Maker](https://github.com/nftperp/nftperp-maker) repo is production ready abd was used by nftperp to market make on its platform using this library
-
+The [NFTPerp Maker](https://github.com/nftperp/nftperp-maker) repo that uses this library is production ready and was used to market make on the paper trading platform.
 
 ## Install
 
@@ -18,7 +17,7 @@ Copy .env-example and create .env. Once the environment variables are set, you c
 
 The liveTrader can be instantiated as below:
 
-    const liveTrader = require('../liveTrader');
+    const liveTrader = require('@nftperp/trader');
     let lt = new liveTrader(signer, amm, leverage=1, testnet = true);
 
 **Parameters:**
