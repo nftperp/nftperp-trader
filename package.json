@@ -2,14 +2,26 @@
   "name": "nftperp-trader",
   "version": "1.0.0",
   "description": "Utilities to make market making on NFTPerp easier",
-  "main": "index.js",
+  "main": "lib/liveTrader.js",
+  "types": "lib/liveTrader.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
   "scripts": {
-    "test": "mocha"
+    "test": "ts-mocha test/*.spec.[jt]s",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nftperp/nftperp-trader.git"
   },
+  "keywords": [
+    "nftperp",
+    "trader"
+  ],
   "author": "NFTPerp",
   "license": "ISC",
   "bugs": {
@@ -21,7 +33,14 @@
     "ethers": "^5.6.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.6",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.6.0",
+    "chai": "^4.3.8",
     "dotenv": "^16.3.1",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }
