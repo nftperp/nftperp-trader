@@ -19,6 +19,13 @@ export type Order = {
   timestamp: number;
 };
 
+export type LimitOrder = {
+  id?: string;
+  side: Side;
+  price: number;
+  amount: number;
+};
+
 export type Level = {
   price: number;
   size: number;
@@ -74,11 +81,40 @@ class liveTrader {
     return;
   }
 
-  async getPrice() {
-    const res = await axios.get(
-      `${this.DOMAIN_NAME}/markPrice?amm=${this.amm}`
+  async checkApproval() {
+    if (!this.ADDRESSES) {
+      throw new Error('Not initialized');
+    }
+
+    const wethContract = new ethers.Contract(
+      this.ADDRESSES.weth,
+      ERC20_ABI.abi,
+      this.signer
     );
-    return res.data.data;
+
+    const allowance_if = await wethContract.allowance(
+      this.signer.getAddress(),
+      this.ADDRESSES.clearingHouse
+    );
+
+    if (allowance_if.lt(ethers.utils.parseEther('1000'))) {
+      console.log('Approving spending to CH');
+      await wethContract.approve(
+        this.ADDRESSES.clearingHouse,
+        ethers.constants.MaxUint256
+      );
+    }
+  }
+
+  async getPrice() {
+    try {
+      const res = await axios.get(
+        `${this.DOMAIN_NAME}/markPrice?amm=${this.amm}`
+      );
+      return res.data.data;
+    } catch (e) {
+      return this.getIndexPrice();
+    }
   }
 
   async getIndexPrice() {
@@ -172,6 +208,46 @@ class liveTrader {
     }
   }
 
+  async createLimitOrders(orders: LimitOrder[]) {
+    if (!this.clearingHouse) {
+      throw new Error('Not initialized');
+    }
+
+    const allOrders = [];
+
+    for (var i = 0; i < orders.length; i++) {
+      const order = orders[i];
+
+      if (order.amount > 0) {
+        const curr_order = {
+          trader: this.PUBLIC_KEY,
+          amm: this.AMM_ADDRESS,
+          side: order.side,
+          trigger: ethers.utils.parseUnits(order.price.toString(), 18),
+          quoteAmount: ethers.utils.parseUnits(order.amount.toString(), 18),
+          leverage: this.leverage,
+          reduceOnly: false,
+        };
+
+        allOrders.push(curr_order);
+      }
+    }
+
+    for (var i = 0; i < 5; i++) {
+      try {
+        if (allOrders.length > 0) {
+          const tx = await this.clearingHouse.createLimitOrderBatch(allOrders);
+          await tx.wait();
+
+          return tx;
+        }
+      } catch (e) {
+        console.log('error', e);
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+  }
+
   async updateLimitOrder(
     id: string,
     side: Side,
@@ -208,6 +284,51 @@ class liveTrader {
         await tx.wait();
 
         return tx;
+      } catch (e) {
+        console.log('error', e);
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+  }
+
+  async updateLimitOrders(orders: LimitOrder[]) {
+    if (!this.clearingHouse) {
+      throw new Error('Not initialized');
+    }
+
+    let ids = [];
+    let allOrders = [];
+
+    for (var i = 0; i < orders.length; i++) {
+      if (orders[i].amount > 0) {
+        const order = {
+          trader: this.PUBLIC_KEY,
+          amm: this.AMM_ADDRESS,
+          side: orders[i].side,
+          trigger: ethers.utils.parseUnits(orders[i].price.toString(), 18),
+          quoteAmount: ethers.utils.parseUnits(orders[i].amount.toString(), 18),
+          leverage: this.leverage,
+          reduceOnly: false,
+        };
+
+        allOrders.push(order);
+        ids.push(orders[i].id);
+      }
+    }
+
+    for (var i = 0; i < 5; i++) {
+      try {
+        if (allOrders.length > 0) {
+          const tx = await this.clearingHouse.updateLimitOrderBatch(
+            ids,
+            allOrders
+          );
+          await tx.wait();
+
+          return tx;
+        } else {
+          return;
+        }
       } catch (e) {
         console.log('error', e);
         await new Promise((r) => setTimeout(r, 2000));
@@ -263,6 +384,23 @@ class liveTrader {
     }
 
     return { buySum, sellSum };
+  }
+
+  async cancelOrders(ids: string[]) {
+    if (!this.clearingHouse) {
+      throw new Error('Not initialized');
+    }
+
+    for (var i = 0; i < 5; i++) {
+      try {
+        const tx = await this.clearingHouse.deleteLimitOrderBatch(ids);
+        await tx.wait();
+        return tx;
+      } catch (e) {
+        console.log('error', e);
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
   }
 
   async getMyOrders() {

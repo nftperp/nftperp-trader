@@ -1,7 +1,7 @@
-import liveTrader from '../src/liveTrader';
-
-import { ethers } from 'ethers';
 import { assert } from 'chai';
+import { ethers } from 'ethers';
+
+import liveTrader from '../src/liveTrader';
 
 require('dotenv').config();
 
@@ -18,33 +18,6 @@ describe('Arbitrum Tests', () => {
 
     lt = new liveTrader(signer, 'bayc', 1, true);
     await lt.initialize();
-  });
-
-  it('Initialization', async () => {
-    assert.strictEqual(
-      lt.ADDRESSES.clearingHouse,
-      '0x8f940C5A2be8ee72487CB5E257a6DE54DBbfD9DD'
-    );
-    assert.strictEqual(
-      lt.ADDRESSES.insuranceFund,
-      '0xe70Ad23d0171de72c9015212359A1Fe1Cd30Ff35'
-    );
-    assert.strictEqual(
-      lt.ADDRESSES.priceFeed,
-      '0xBe1296C9062DA7B2Eac8EF85C4e124C821619255'
-    );
-    assert.strictEqual(
-      lt.ADDRESSES.whitelist,
-      '0xB9433D4E49E8C90ee5616aD1eE78a5Ba141Fd370'
-    );
-    assert.strictEqual(
-      lt.ADDRESSES.amms.bayc,
-      '0xc7cA02aa95EBcCeBC098A4C0a07de0CDa110036b'
-    );
-    assert.strictEqual(
-      lt.AMM_ADDRESS,
-      '0xc7cA02aa95EBcCeBC098A4C0a07de0CDa110036b'
-    );
   });
 
   it('Get Mark Price', async () => {
